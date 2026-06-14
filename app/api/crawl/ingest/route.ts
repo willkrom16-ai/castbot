@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ingestOpportunityAsService } from "@/lib/actions/ingest"
 
+// AI pipeline runs 6 sequential Claude agents — needs up to 60s
+// Requires Vercel Pro plan (Hobby plan caps at 10s)
+export const maxDuration = 60
+
 const CRAWLER_SECRET = process.env.CRAWLER_SECRET
 
 export async function POST(req: NextRequest) {

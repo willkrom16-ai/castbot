@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { ingestOpportunityAsService } from "@/lib/actions/ingest"
 import { saveSkippedOpportunity } from "@/lib/actions/save-skipped"
+
+export const maxDuration = 60
 import { splitRoles } from "@/lib/email/role-splitter"
 import { runBatchScanAgent } from "@/lib/ai/agents/scan"
 import type { Database } from "@/types/database"

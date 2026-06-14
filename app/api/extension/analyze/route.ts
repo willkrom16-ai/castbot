@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { runQuickPipeline } from "@/lib/ai/pipeline"
 import { buildActorProfile } from "@/lib/actions/build-actor-profile"
+
+export const maxDuration = 60
 import type { Database } from "@/types/database"
 import type { Json } from "@/types/database"
 
