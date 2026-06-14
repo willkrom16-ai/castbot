@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     union_requirement: ev.union_requirement,
     shoot_location: ev.shoot_location,
     audition_deadline: ev.audition_deadline ?? null,
-    rate_disclosed: ev.rate_disclosed,
+    rate_disclosed: ev.rate_disclosed ? 1 : 0,
     casting_director: ev.casting_director,
     production_company: ev.production_company,
     submission_url: body.listing_url ?? ev.submission_url ?? null,
