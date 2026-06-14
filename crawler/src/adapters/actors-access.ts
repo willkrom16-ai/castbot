@@ -85,15 +85,9 @@ export class ActorsAccessAdapter extends BaseAdapter {
             var allHrefs = anchors.map(function(a) { return a.href; });
             console.log('[actors_access] Total anchors: ' + allHrefs.length + ' Sample: ' + JSON.stringify(allHrefs.slice(0, 15)));
             return allHrefs.filter(function(href) {
+              // Only individual breakdown listings (breakdown=NNNNNN), not pagination or nav links
               return href.includes('actorsaccess.com') &&
-                href !== 'https://actorsaccess.com/projects/' &&
-                href !== 'https://actorsaccess.com/' &&
-                (
-                  href.includes('/projects') ||
-                  href.includes('/role') ||
-                  href.includes('projID=') ||
-                  href.includes('roleID=')
-                );
+                /[?&]breakdown=\d+/.test(href);
             });
           })()
         `) as string[]

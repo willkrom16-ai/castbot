@@ -53,6 +53,11 @@ export class ImdbProAdapter extends BaseAdapter {
       `)
 
       await page.waitForURL(/pro\.imdb\.com/, { timeout: 25000 })
+      // Amazon auth sets session cookies asynchronously via JS — wait for them to settle
+      await page.waitForTimeout(5000)
+      // Verify we're actually authenticated (not on signup/marketing page)
+      const landedUrl = page.url()
+      console.log(`[imdb_pro] Post-login URL: ${landedUrl}`)
     } finally {
       await page.close()
     }
@@ -66,8 +71,15 @@ export class ImdbProAdapter extends BaseAdapter {
         waitUntil: 'domcontentloaded',
         timeout: 15000
       })
+      await page.waitForTimeout(2000)
       const url = page.url()
-      return url.includes('pro.imdb.com') && !url.includes('signin')
+      // If redirected to signup or still on marketing homepage, session is not valid
+      if (url.includes('signin') || url.includes('signup') || url.includes('spl_') ) return false
+      // Check page content for authenticated markers
+      const content = await page.content()
+      const isAuth = content.includes('projects') || content.includes('In Development') || content.includes('profile-menu')
+      console.log(`[imdb_pro] verifySession: url=${url}, isAuth=${isAuth}`)
+      return isAuth
     } catch {
       return false
     } finally {

@@ -13,27 +13,30 @@ export class CastingNetworksAdapter extends BaseAdapter {
     const page = await newLoginPage(ctx)
 
     try {
-      await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'domcontentloaded', timeout: 30000 })
-      await page.waitForTimeout(4000) // extra wait for SPA hydration
+      await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'networkidle', timeout: 45000 })
 
-      await page.evaluate(`
-        (function() {
-          function setVal(sel, val) {
-            var el = document.querySelector(sel);
-            if (!el) return;
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-          setVal('input[type="email"], input[name="email"]', ${JSON.stringify(username)});
-          setVal('input[type="password"]', ${JSON.stringify(password)});
-          var btn = document.querySelector('button[type="submit"]');
-          if (btn) btn.click();
-        })()
-      `)
+      // Wait for the email input to actually appear in the DOM (SPA hydration)
+      await page.waitForSelector('input[type="email"], input[name="email"]', { timeout: 15000 })
+      await page.waitForTimeout(1000)
+
+      // Fill using Playwright native fill (triggers React synthetic events properly)
+      const emailSel = 'input[type="email"], input[name="email"]'
+      const passSel = 'input[type="password"]'
+      await page.locator(emailSel).first().fill(username)
+      await page.waitForTimeout(500)
+      await page.locator(passSel).first().fill(password)
+      await page.waitForTimeout(500)
+
+      // Try button click first, fall back to pressing Enter
+      const submitBtn = page.locator('button[type="submit"]').first()
+      if (await submitBtn.count() > 0) {
+        await submitBtn.click()
+      } else {
+        await page.locator(passSel).first().press('Enter')
+      }
 
       // Wait for navigation away from login (SPA may redirect to dashboard, home, or talent)
-      await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 30000 })
+      await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 45000 })
     } finally {
       await page.close()
     }
