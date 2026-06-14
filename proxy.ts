@@ -9,6 +9,7 @@ export default proxy
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Exclude static assets, webhooks, crawler API endpoints (they use Bearer auth, not cookies)
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/crawl|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }
