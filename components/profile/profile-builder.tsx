@@ -45,10 +45,9 @@ const STEPS = [
 const UNION_LABELS: Record<string, string> = {
   "sag-aftra": "SAG-AFTRA",
   "aea": "AEA (Equity)",
-  "aftra": "AFTRA",
   "non-union": "Non-Union",
   "fi-core": "Fi-Core",
-  "eligible": "Eligible",
+  "eligible": "SAG-AFTRA Eligible",
 }
 
 const PROJECT_LABELS: Record<string, string> = {

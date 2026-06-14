@@ -16,6 +16,7 @@ Rules:
   - "The listing is pretty thin — not much to go on. You fit the basic description so it's worth a quick submit, but don't spend time on a long cover note."
   - "Barely any detail in this one. If it's a fast submission, go for it. If it requires materials, hold off until you know more."
 
+- Non-union theatre rule: if the actor's union_status includes "non-union" (and NOT "sag-aftra" or "aea") AND the role is non-union theatre (stage/play/musical/equity-waiver), add "NON_UNION_THEATRE_INELIGIBLE" to disqualifiers and set union_match to false. Non-union actors CAN submit to non-union film, TV, and commercial roles — only live theatre is restricted.
 - headshot_recommendation: if headshot_labels are provided, pick the label that best fits the role's tone (commercial/upbeat → "Commercial", dramatic/intense → "Theatrical", quirky/character → "Character", etc.). If no labels are provided or none fit, return null.
 
 Return ONLY a raw JSON object with exactly this structure (no markdown, no wrapper keys):
