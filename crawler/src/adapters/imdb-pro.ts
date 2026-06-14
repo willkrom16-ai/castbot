@@ -1,7 +1,7 @@
 import { Page } from 'playwright'
 import { BaseAdapter } from './base.js'
 import { ListingResult } from '../types.js'
-import { newPage } from '../browser.js'
+import { newPage, newLoginPage } from '../browser.js'
 
 // Note: IMDB Pro is primarily a research tool (casting director contacts, project status).
 // We crawl the "In Development" and production listings that mention open casting.
@@ -12,28 +12,49 @@ export class ImdbProAdapter extends BaseAdapter {
   protected async login(): Promise<void> {
     const { username, password } = this.credentials()
     const ctx = await this.getContext()
-    const page = await newPage(ctx)
+    const page = await newLoginPage(ctx)
 
     try {
       await page.goto('https://www.imdb.com/ap/signin?openid.return_to=https://pro.imdb.com/', { waitUntil: 'networkidle', timeout: 30000 })
+      await page.waitForTimeout(2000)
 
-      // Amazon login — wait for field to be attached then force fill
-      const emailField = page.locator('input[name="email"], #ap_email').first()
-      await emailField.waitFor({ state: 'attached', timeout: 15000 })
-      await emailField.fill(username, { force: true })
+      // Amazon uses JS-rendered fields — fill via evaluate to bypass visibility
+      await page.evaluate(([u]) => {
+        const setVal = (selector: string, value: string) => {
+          const el = document.querySelector(selector) as HTMLInputElement | null
+          if (!el) return false
+          el.value = value
+          el.dispatchEvent(new Event('input', { bubbles: true }))
+          el.dispatchEvent(new Event('change', { bubbles: true }))
+          return true
+        }
+        setVal('input[name="email"], #ap_email', u)
+      }, [username])
 
-      // Amazon login is two-step: email → continue → password
-      const continueBtn = page.locator('input[id="continue"], #continue').first()
-      if (await continueBtn.count() > 0) {
-        await continueBtn.click({ force: true })
-        await page.waitForTimeout(2000)
-      }
+      // Amazon login may be two-step: email → continue → password
+      await page.evaluate(() => {
+        const cont = document.querySelector('input[id="continue"], #continue') as HTMLElement | null
+        cont?.click()
+      })
+      await page.waitForTimeout(2000)
 
-      const passwordField = page.locator('input[name="password"], #ap_password').first()
-      await passwordField.waitFor({ state: 'attached', timeout: 10000 })
-      await passwordField.fill(password, { force: true })
+      await page.evaluate(([p]) => {
+        const setVal = (selector: string, value: string) => {
+          const el = document.querySelector(selector) as HTMLInputElement | null
+          if (!el) return false
+          el.value = value
+          el.dispatchEvent(new Event('input', { bubbles: true }))
+          el.dispatchEvent(new Event('change', { bubbles: true }))
+          return true
+        }
+        setVal('input[name="password"], #ap_password', p)
+      }, [password])
 
-      await page.locator('input[id="signInSubmit"], input[type="submit"]').first().click({ force: true })
+      await page.evaluate(() => {
+        const btn = document.querySelector('input[id="signInSubmit"], input[type="submit"]') as HTMLElement | null
+        btn?.click()
+      })
+
       await page.waitForURL(/pro\.imdb\.com/, { timeout: 25000 })
     } finally {
       await page.close()

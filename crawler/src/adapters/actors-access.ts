@@ -1,7 +1,7 @@
 import { Page } from 'playwright'
 import { BaseAdapter } from './base.js'
 import { ListingResult } from '../types.js'
-import { newPage } from '../browser.js'
+import { newPage, newLoginPage } from '../browser.js'
 
 export class ActorsAccessAdapter extends BaseAdapter {
   readonly site = 'actors_access' as const
@@ -10,19 +10,30 @@ export class ActorsAccessAdapter extends BaseAdapter {
   protected async login(): Promise<void> {
     const { username, password } = this.credentials()
     const ctx = await this.getContext()
-    const page = await newPage(ctx)
+    const page = await newLoginPage(ctx)
 
     try {
       await page.goto('https://actorsaccess.com/', { waitUntil: 'networkidle', timeout: 30000 })
+      await page.waitForTimeout(2000)
 
-      // Field exists but may be hidden — use force to bypass visibility check
-      const usernameField = page.locator('input[name="username"], input[name="mem_username"]').first()
-      await usernameField.fill(username, { force: true })
+      await page.evaluate(([u, p]) => {
+        const setVal = (selector: string, value: string) => {
+          const el = document.querySelector(selector) as HTMLInputElement | null
+          if (!el) return false
+          el.value = value
+          el.dispatchEvent(new Event('input', { bubbles: true }))
+          el.dispatchEvent(new Event('change', { bubbles: true }))
+          return true
+        }
+        setVal('input[name="username"], input[name="mem_username"]', u)
+        setVal('input[type="password"]', p)
+      }, [username, password])
 
-      const passwordField = page.locator('input[type="password"]').first()
-      await passwordField.fill(password, { force: true })
+      await page.evaluate(() => {
+        const btn = document.querySelector('input[type="submit"], button[type="submit"]') as HTMLElement | null
+        btn?.click()
+      })
 
-      await page.click('input[type="submit"], button[type="submit"]', { force: true })
       await page.waitForLoadState('networkidle', { timeout: 20000 })
     } finally {
       await page.close()

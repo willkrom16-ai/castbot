@@ -1,7 +1,7 @@
 import { Page } from 'playwright'
 import { BaseAdapter } from './base.js'
 import { ListingResult } from '../types.js'
-import { newPage } from '../browser.js'
+import { newPage, newLoginPage } from '../browser.js'
 
 export class CastingNetworksAdapter extends BaseAdapter {
   readonly site = 'casting_networks' as const
@@ -10,19 +10,29 @@ export class CastingNetworksAdapter extends BaseAdapter {
   protected async login(): Promise<void> {
     const { username, password } = this.credentials()
     const ctx = await this.getContext()
-    const page = await newPage(ctx)
+    const page = await newLoginPage(ctx)
 
     try {
       await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'networkidle', timeout: 30000 })
       await page.waitForTimeout(3000) // extra wait for SPA hydration
 
-      // Use force — SPA forms are sometimes behind invisible wrappers during animation
-      const emailField = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first()
-      await emailField.waitFor({ state: 'attached', timeout: 20000 })
-      await emailField.fill(username, { force: true })
+      await page.evaluate(([u, p]) => {
+        const setVal = (selector: string, value: string) => {
+          const el = document.querySelector(selector) as HTMLInputElement | null
+          if (!el) return false
+          el.value = value
+          el.dispatchEvent(new Event('input', { bubbles: true }))
+          el.dispatchEvent(new Event('change', { bubbles: true }))
+          return true
+        }
+        setVal('input[type="email"], input[name="email"]', u)
+        setVal('input[type="password"]', p)
+      }, [username, password])
 
-      await page.locator('input[type="password"]').first().fill(password, { force: true })
-      await page.locator('button[type="submit"]').first().click({ force: true })
+      await page.evaluate(() => {
+        const btn = document.querySelector('button[type="submit"]') as HTMLElement | null
+        btn?.click()
+      })
 
       await page.waitForURL(/castingnetworks\.com\/talent/, { timeout: 30000 })
     } finally {

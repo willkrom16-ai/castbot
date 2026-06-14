@@ -1,7 +1,7 @@
 import { Page } from 'playwright'
 import { BaseAdapter } from './base.js'
 import { ListingResult } from '../types.js'
-import { newPage } from '../browser.js'
+import { newPage, newLoginPage } from '../browser.js'
 
 export class BackstageAdapter extends BaseAdapter {
   readonly site = 'backstage' as const
@@ -10,22 +10,31 @@ export class BackstageAdapter extends BaseAdapter {
   protected async login(): Promise<void> {
     const { username, password } = this.credentials()
     const ctx = await this.getContext()
-    const page = await newPage(ctx)
+    const page = await newLoginPage(ctx)
 
     try {
       await page.goto('https://www.backstage.com/login/', { waitUntil: 'networkidle', timeout: 30000 })
+      await page.waitForTimeout(2000)
 
-      // Try to find and click a visible email field; fall back to force if hidden
-      const emailField = page.locator('input[type="email"], input[name="email"], #email').first()
-      await emailField.waitFor({ state: 'attached', timeout: 15000 })
-      await emailField.fill(username, { force: true })
+      // Fill via JS to bypass any visibility/bot-detection issues
+      await page.evaluate(([u, p]) => {
+        const setVal = (selector: string, value: string) => {
+          const el = document.querySelector(selector) as HTMLInputElement | null
+          if (!el) return false
+          el.value = value
+          el.dispatchEvent(new Event('input', { bubbles: true }))
+          el.dispatchEvent(new Event('change', { bubbles: true }))
+          return true
+        }
+        setVal('input[type="email"], input[name="email"], #email', u)
+        setVal('input[type="password"], input[name="password"], #password', p)
+      }, [username, password])
 
-      const passwordField = page.locator('input[type="password"], input[name="password"], #password').first()
-      await passwordField.fill(password, { force: true })
+      await page.evaluate(() => {
+        const btn = document.querySelector('button[type="submit"], input[type="submit"]') as HTMLElement | null
+        btn?.click()
+      })
 
-      await page.locator('button[type="submit"]').first().click({ force: true })
-
-      // Wait for redirect to logged-in state
       await page.waitForURL(/backstage\.com\/(?!login)/, { timeout: 20000 })
     } finally {
       await page.close()

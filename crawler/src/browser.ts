@@ -60,9 +60,9 @@ export async function saveSession(context: BrowserContext, site: SiteName): Prom
   await context.storageState({ path: sessionPath(site) })
 }
 
+// For crawling listing pages — blocks images/fonts/media for speed
 export async function newPage(context: BrowserContext): Promise<Page> {
   const page = await context.newPage()
-  // Block images, fonts, and media to speed up crawling
   await page.route('**/*', (route) => {
     const type = route.request().resourceType()
     if (['image', 'font', 'media'].includes(type)) {
@@ -72,4 +72,9 @@ export async function newPage(context: BrowserContext): Promise<Page> {
     }
   })
   return page
+}
+
+// For login pages — no resource blocking so forms fully render
+export async function newLoginPage(context: BrowserContext): Promise<Page> {
+  return context.newPage()
 }
