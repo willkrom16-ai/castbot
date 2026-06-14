@@ -15,45 +15,42 @@ export class ImdbProAdapter extends BaseAdapter {
     const page = await newLoginPage(ctx)
 
     try {
-      await page.goto('https://www.imdb.com/ap/signin?openid.return_to=https://pro.imdb.com/', { waitUntil: 'networkidle', timeout: 30000 })
+      await page.goto('https://www.imdb.com/ap/signin?openid.return_to=https://pro.imdb.com/', { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(2000)
 
-      // Amazon uses JS-rendered fields — fill via evaluate to bypass visibility
-      await page.evaluate(([u]) => {
-        const setVal = (selector: string, value: string) => {
-          const el = document.querySelector(selector) as HTMLInputElement | null
-          if (!el) return false
-          el.value = value
-          el.dispatchEvent(new Event('input', { bubbles: true }))
-          el.dispatchEvent(new Event('change', { bubbles: true }))
-          return true
-        }
-        setVal('input[name="email"], #ap_email', u)
-      }, [username])
+      // Step 1: fill email and click continue (Amazon may be two-step)
+      await page.evaluate(`
+        (function() {
+          function setVal(sel, val) {
+            var el = document.querySelector(sel);
+            if (!el) return;
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          setVal('input[name="email"], #ap_email', ${JSON.stringify(username)});
+          var cont = document.querySelector('input[id="continue"], #continue');
+          if (cont) cont.click();
+        })()
+      `)
 
-      // Amazon login may be two-step: email → continue → password
-      await page.evaluate(() => {
-        const cont = document.querySelector('input[id="continue"], #continue') as HTMLElement | null
-        cont?.click()
-      })
       await page.waitForTimeout(2000)
 
-      await page.evaluate(([p]) => {
-        const setVal = (selector: string, value: string) => {
-          const el = document.querySelector(selector) as HTMLInputElement | null
-          if (!el) return false
-          el.value = value
-          el.dispatchEvent(new Event('input', { bubbles: true }))
-          el.dispatchEvent(new Event('change', { bubbles: true }))
-          return true
-        }
-        setVal('input[name="password"], #ap_password', p)
-      }, [password])
-
-      await page.evaluate(() => {
-        const btn = document.querySelector('input[id="signInSubmit"], input[type="submit"]') as HTMLElement | null
-        btn?.click()
-      })
+      // Step 2: fill password and submit
+      await page.evaluate(`
+        (function() {
+          function setVal(sel, val) {
+            var el = document.querySelector(sel);
+            if (!el) return;
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          setVal('input[name="password"], #ap_password', ${JSON.stringify(password)});
+          var btn = document.querySelector('input[id="signInSubmit"], input[type="submit"]');
+          if (btn) btn.click();
+        })()
+      `)
 
       await page.waitForURL(/pro\.imdb\.com/, { timeout: 25000 })
     } finally {

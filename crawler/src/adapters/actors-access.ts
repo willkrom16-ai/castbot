@@ -13,26 +13,24 @@ export class ActorsAccessAdapter extends BaseAdapter {
     const page = await newLoginPage(ctx)
 
     try {
-      await page.goto('https://actorsaccess.com/', { waitUntil: 'networkidle', timeout: 30000 })
-      await page.waitForTimeout(2000)
+      await page.goto('https://actorsaccess.com/', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(3000)
 
-      await page.evaluate(([u, p]) => {
-        const setVal = (selector: string, value: string) => {
-          const el = document.querySelector(selector) as HTMLInputElement | null
-          if (!el) return false
-          el.value = value
-          el.dispatchEvent(new Event('input', { bubbles: true }))
-          el.dispatchEvent(new Event('change', { bubbles: true }))
-          return true
-        }
-        setVal('input[name="username"], input[name="mem_username"]', u)
-        setVal('input[type="password"]', p)
-      }, [username, password])
-
-      await page.evaluate(() => {
-        const btn = document.querySelector('input[type="submit"], button[type="submit"]') as HTMLElement | null
-        btn?.click()
-      })
+      await page.evaluate(`
+        (function() {
+          function setVal(sel, val) {
+            var el = document.querySelector(sel);
+            if (!el) return;
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          setVal('input[name="username"], input[name="mem_username"]', ${JSON.stringify(username)});
+          setVal('input[type="password"]', ${JSON.stringify(password)});
+          var btn = document.querySelector('input[type="submit"], button[type="submit"]');
+          if (btn) btn.click();
+        })()
+      `)
 
       await page.waitForLoadState('networkidle', { timeout: 20000 })
     } finally {

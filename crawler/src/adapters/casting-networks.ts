@@ -13,26 +13,24 @@ export class CastingNetworksAdapter extends BaseAdapter {
     const page = await newLoginPage(ctx)
 
     try {
-      await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'networkidle', timeout: 30000 })
-      await page.waitForTimeout(3000) // extra wait for SPA hydration
+      await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(4000) // extra wait for SPA hydration
 
-      await page.evaluate(([u, p]) => {
-        const setVal = (selector: string, value: string) => {
-          const el = document.querySelector(selector) as HTMLInputElement | null
-          if (!el) return false
-          el.value = value
-          el.dispatchEvent(new Event('input', { bubbles: true }))
-          el.dispatchEvent(new Event('change', { bubbles: true }))
-          return true
-        }
-        setVal('input[type="email"], input[name="email"]', u)
-        setVal('input[type="password"]', p)
-      }, [username, password])
-
-      await page.evaluate(() => {
-        const btn = document.querySelector('button[type="submit"]') as HTMLElement | null
-        btn?.click()
-      })
+      await page.evaluate(`
+        (function() {
+          function setVal(sel, val) {
+            var el = document.querySelector(sel);
+            if (!el) return;
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          setVal('input[type="email"], input[name="email"]', ${JSON.stringify(username)});
+          setVal('input[type="password"]', ${JSON.stringify(password)});
+          var btn = document.querySelector('button[type="submit"]');
+          if (btn) btn.click();
+        })()
+      `)
 
       await page.waitForURL(/castingnetworks\.com\/talent/, { timeout: 30000 })
     } finally {

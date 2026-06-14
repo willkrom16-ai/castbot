@@ -13,27 +13,25 @@ export class BackstageAdapter extends BaseAdapter {
     const page = await newLoginPage(ctx)
 
     try {
-      await page.goto('https://www.backstage.com/login/', { waitUntil: 'networkidle', timeout: 30000 })
-      await page.waitForTimeout(2000)
+      await page.goto('https://www.backstage.com/login/', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(3000)
 
-      // Fill via JS to bypass any visibility/bot-detection issues
-      await page.evaluate(([u, p]) => {
-        const setVal = (selector: string, value: string) => {
-          const el = document.querySelector(selector) as HTMLInputElement | null
-          if (!el) return false
-          el.value = value
-          el.dispatchEvent(new Event('input', { bubbles: true }))
-          el.dispatchEvent(new Event('change', { bubbles: true }))
-          return true
-        }
-        setVal('input[type="email"], input[name="email"], #email', u)
-        setVal('input[type="password"], input[name="password"], #password', p)
-      }, [username, password])
-
-      await page.evaluate(() => {
-        const btn = document.querySelector('button[type="submit"], input[type="submit"]') as HTMLElement | null
-        btn?.click()
-      })
+      // Use string-based evaluate to avoid tsx/esbuild helper injection (__name errors)
+      await page.evaluate(`
+        (function() {
+          function setVal(sel, val) {
+            var el = document.querySelector(sel);
+            if (!el) return;
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+          setVal('input[type="email"], input[name="email"], #email', ${JSON.stringify(username)});
+          setVal('input[type="password"], input[name="password"], #password', ${JSON.stringify(password)});
+          var btn = document.querySelector('button[type="submit"], input[type="submit"]');
+          if (btn) btn.click();
+        })()
+      `)
 
       await page.waitForURL(/backstage\.com\/(?!login)/, { timeout: 20000 })
     } finally {
