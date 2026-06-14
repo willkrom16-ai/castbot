@@ -13,13 +13,17 @@ export class CastingNetworksAdapter extends BaseAdapter {
     const page = await newPage(ctx)
 
     try {
-      await page.goto('https://app.castingnetworks.com/', { waitUntil: 'domcontentloaded' })
+      await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'networkidle', timeout: 30000 })
 
-      await page.fill('input[type="email"], input[name="email"], input[placeholder*="email" i]', username)
-      await page.fill('input[type="password"]', password)
-      await page.click('button[type="submit"]')
+      // SPA — wait for the form to render
+      const emailField = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first()
+      await emailField.waitFor({ state: 'visible', timeout: 20000 })
+      await emailField.fill(username)
 
-      await page.waitForURL(/castingnetworks\.com\/talent/, { timeout: 20000 })
+      await page.locator('input[type="password"]').first().fill(password)
+      await page.locator('button[type="submit"]').first().click()
+
+      await page.waitForURL(/castingnetworks\.com\/talent/, { timeout: 30000 })
     } finally {
       await page.close()
     }

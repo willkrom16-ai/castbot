@@ -13,14 +13,18 @@ export class ActorsAccessAdapter extends BaseAdapter {
     const page = await newPage(ctx)
 
     try {
-      await page.goto('https://actorsaccess.com/', { waitUntil: 'domcontentloaded' })
+      await page.goto('https://actorsaccess.com/', { waitUntil: 'networkidle', timeout: 30000 })
 
-      // Find and fill login form
-      await page.fill('input[name="mem_username"], input[type="text"]', username)
-      await page.fill('input[name="mem_password"], input[type="password"]', password)
+      // Wait for and click the username field (may be hidden until page fully loads)
+      const usernameField = page.locator('input[name="username"], input[name="mem_username"]').first()
+      await usernameField.waitFor({ state: 'visible', timeout: 15000 })
+      await usernameField.fill(username)
+
+      const passwordField = page.locator('input[type="password"]').first()
+      await passwordField.fill(password)
+
       await page.click('input[type="submit"], button[type="submit"]')
-
-      await page.waitForURL(/actorsaccess\.com\/(?!$)/, { timeout: 15000 })
+      await page.waitForLoadState('networkidle', { timeout: 20000 })
     } finally {
       await page.close()
     }
