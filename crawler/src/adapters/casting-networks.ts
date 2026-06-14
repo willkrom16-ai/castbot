@@ -14,14 +14,15 @@ export class CastingNetworksAdapter extends BaseAdapter {
 
     try {
       await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'networkidle', timeout: 30000 })
+      await page.waitForTimeout(3000) // extra wait for SPA hydration
 
-      // SPA — wait for the form to render
+      // Use force — SPA forms are sometimes behind invisible wrappers during animation
       const emailField = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first()
-      await emailField.waitFor({ state: 'visible', timeout: 20000 })
-      await emailField.fill(username)
+      await emailField.waitFor({ state: 'attached', timeout: 20000 })
+      await emailField.fill(username, { force: true })
 
-      await page.locator('input[type="password"]').first().fill(password)
-      await page.locator('button[type="submit"]').first().click()
+      await page.locator('input[type="password"]').first().fill(password, { force: true })
+      await page.locator('button[type="submit"]').first().click({ force: true })
 
       await page.waitForURL(/castingnetworks\.com\/talent/, { timeout: 30000 })
     } finally {

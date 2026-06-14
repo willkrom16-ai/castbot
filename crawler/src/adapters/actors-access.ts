@@ -15,15 +15,14 @@ export class ActorsAccessAdapter extends BaseAdapter {
     try {
       await page.goto('https://actorsaccess.com/', { waitUntil: 'networkidle', timeout: 30000 })
 
-      // Wait for and click the username field (may be hidden until page fully loads)
+      // Field exists but may be hidden — use force to bypass visibility check
       const usernameField = page.locator('input[name="username"], input[name="mem_username"]').first()
-      await usernameField.waitFor({ state: 'visible', timeout: 15000 })
-      await usernameField.fill(username)
+      await usernameField.fill(username, { force: true })
 
       const passwordField = page.locator('input[type="password"]').first()
-      await passwordField.fill(password)
+      await passwordField.fill(password, { force: true })
 
-      await page.click('input[type="submit"], button[type="submit"]')
+      await page.click('input[type="submit"], button[type="submit"]', { force: true })
       await page.waitForLoadState('networkidle', { timeout: 20000 })
     } finally {
       await page.close()

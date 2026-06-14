@@ -15,13 +15,26 @@ export class ImdbProAdapter extends BaseAdapter {
     const page = await newPage(ctx)
 
     try {
-      await page.goto('https://www.imdb.com/ap/signin?openid.return_to=https://pro.imdb.com/', { waitUntil: 'domcontentloaded' })
+      await page.goto('https://www.imdb.com/ap/signin?openid.return_to=https://pro.imdb.com/', { waitUntil: 'networkidle', timeout: 30000 })
 
-      await page.fill('input[name="email"], #ap_email', username)
-      await page.fill('input[name="password"], #ap_password', password)
-      await page.click('input[id="signInSubmit"], input[type="submit"]')
+      // Amazon login — wait for field to be attached then force fill
+      const emailField = page.locator('input[name="email"], #ap_email').first()
+      await emailField.waitFor({ state: 'attached', timeout: 15000 })
+      await emailField.fill(username, { force: true })
 
-      await page.waitForURL(/pro\.imdb\.com/, { timeout: 20000 })
+      // Amazon login is two-step: email → continue → password
+      const continueBtn = page.locator('input[id="continue"], #continue').first()
+      if (await continueBtn.count() > 0) {
+        await continueBtn.click({ force: true })
+        await page.waitForTimeout(2000)
+      }
+
+      const passwordField = page.locator('input[name="password"], #ap_password').first()
+      await passwordField.waitFor({ state: 'attached', timeout: 10000 })
+      await passwordField.fill(password, { force: true })
+
+      await page.locator('input[id="signInSubmit"], input[type="submit"]').first().click({ force: true })
+      await page.waitForURL(/pro\.imdb\.com/, { timeout: 25000 })
     } finally {
       await page.close()
     }

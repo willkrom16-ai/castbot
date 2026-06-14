@@ -13,15 +13,20 @@ export class BackstageAdapter extends BaseAdapter {
     const page = await newPage(ctx)
 
     try {
-      await page.goto('https://www.backstage.com/login/', { waitUntil: 'domcontentloaded' })
+      await page.goto('https://www.backstage.com/login/', { waitUntil: 'networkidle', timeout: 30000 })
 
-      // Fill login form
-      await page.fill('input[type="email"], input[name="email"], #email', username)
-      await page.fill('input[type="password"], input[name="password"], #password', password)
-      await page.click('button[type="submit"]')
+      // Try to find and click a visible email field; fall back to force if hidden
+      const emailField = page.locator('input[type="email"], input[name="email"], #email').first()
+      await emailField.waitFor({ state: 'attached', timeout: 15000 })
+      await emailField.fill(username, { force: true })
+
+      const passwordField = page.locator('input[type="password"], input[name="password"], #password').first()
+      await passwordField.fill(password, { force: true })
+
+      await page.locator('button[type="submit"]').first().click({ force: true })
 
       // Wait for redirect to logged-in state
-      await page.waitForURL(/backstage\.com\/(?!login)/, { timeout: 15000 })
+      await page.waitForURL(/backstage\.com\/(?!login)/, { timeout: 20000 })
     } finally {
       await page.close()
     }
