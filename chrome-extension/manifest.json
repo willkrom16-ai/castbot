@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "CastBot",
+  "version": "1.0.0",
+  "description": "AI-powered casting analysis and submission",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://www.backstage.com/*",
+    "https://backstage.com/*",
+    "https://app.castingnetworks.com/*",
+    "https://www.castingnetworks.com/*",
+    "https://actorsaccess.com/*",
+    "https://www.actorsaccess.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.backstage.com/*",
+        "https://backstage.com/*",
+        "https://app.castingnetworks.com/*",
+        "https://www.castingnetworks.com/*",
+        "https://actorsaccess.com/*",
+        "https://www.actorsaccess.com/*"
+      ],
+      "js": ["content/inject.js"],
+      "css": ["content/castbot.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "CastBot Settings"
+  },
+  "options_page": "options/options.html"
+}

@@ -1,0 +1,12 @@
+export type UnionStatus = "sag-aftra" | "non-union" | "eligible" | "fi-core"
+export type RepStatus = "represented" | "self-submit" | "hybrid"
+export type RecommendedAction = "SUBMIT" | "SKIP" | "REVIEW" | "FLAG"
+export type DecisionType = "APPROVED" | "REJECTED" | "EDITED_APPROVED" | "SNOOZED"
+export type ProcessingStatus = "pending" | "processing" | "analyzed" | "failed"
+export type OutcomeType =
+  | "no_response"
+  | "request_self_tape"
+  | "callback"
+  | "avail_check"
+  | "booked"
+  | "released"
