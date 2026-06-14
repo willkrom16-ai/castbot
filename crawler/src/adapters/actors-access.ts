@@ -127,6 +127,85 @@ export class ActorsAccessAdapter extends BaseAdapter {
     return [...new Set(urls)]
   }
 
+  // Override fetchListing: Actors Access redirects direct breakdown URL navigation
+  // to the login page (server-side session state check). Instead we must land on
+  // /projects/ first, click the breakdown link in-page, then extract from frames.
+  async fetchListing(url: string): Promise<ListingResult> {
+    const breakdownMatch = url.match(/breakdown=(\d+)/)
+    if (!breakdownMatch) return { url, title: '', rawText: '' }
+    const breakdownId = breakdownMatch[1]
+
+    const ctx = await this.getContext()
+    // Use full page (no resource blocking) so iframes and SPA content load properly
+    const page = await newLoginPage(ctx)
+
+    try {
+      // Step 1: land on the authenticated projects page first
+      await page.goto('https://actorsaccess.com/projects/', {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000,
+      })
+      await page.waitForTimeout(2000)
+
+      // Step 2: try to click the breakdown link to load it in the SPA/iframe context
+      const breakdownLink = page.locator(`a[href*="breakdown=${breakdownId}"]`).first()
+      if (await breakdownLink.count() > 0) {
+        await breakdownLink.click()
+        await page.waitForTimeout(2500)
+      } else {
+        // Fallback: navigate directly (may work if server-side state is now set)
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
+        await page.waitForTimeout(2000)
+      }
+
+      const title = await page.title()
+
+      // Step 3: collect text from all accessible frames + main page
+      let bestText = ''
+      for (const frame of page.frames()) {
+        try {
+          const frameText: string = await frame.evaluate(`
+            (function() {
+              if (document.title && document.title.toLowerCase().includes('login')) return '';
+              var sels = ['#project_details','#role_details','.project-info','.role-info',
+                          'table.breakdown','form[name="projectForm"]','main','#main_content','body'];
+              for (var i = 0; i < sels.length; i++) {
+                var el = document.querySelector(sels[i]);
+                if (el && el.innerText && el.innerText.trim().length > 200) {
+                  return el.innerText.trim();
+                }
+              }
+              return '';
+            })()
+          `)
+          if (frameText.length > bestText.length) {
+            bestText = frameText
+          }
+        } catch { /* cross-origin or inaccessible frame — skip */ }
+      }
+
+      // If still empty, fall back to main page body
+      if (bestText.length < 100) {
+        bestText = await page.evaluate(`
+          (function() {
+            var noise = document.querySelectorAll('nav,footer,header,script,style');
+            noise.forEach(function(el) { el.remove(); });
+            return document.body ? document.body.innerText.trim() : '';
+          })()
+        `) as string
+      }
+
+      // Reject login pages
+      if (title.toLowerCase().includes('login') && bestText.length < 500) {
+        return { url, title, rawText: '' }
+      }
+
+      return { url, title, rawText: bestText }
+    } finally {
+      await page.close()
+    }
+  }
+
   async extractListing(page: Page, url: string): Promise<ListingResult> {
     const text = await page.evaluate(() => {
       const selectors = [
