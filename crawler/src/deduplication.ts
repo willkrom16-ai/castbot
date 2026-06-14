@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import { config } from './config.js'
 import { SiteName } from './types.js'
 
-const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey)
+const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey, {
+  realtime: { transport: ws },
+})
 
 export async function filterUnseen(
   actorId: string,
