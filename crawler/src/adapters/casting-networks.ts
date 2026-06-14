@@ -32,7 +32,8 @@ export class CastingNetworksAdapter extends BaseAdapter {
         })()
       `)
 
-      await page.waitForURL(/castingnetworks\.com\/talent/, { timeout: 30000 })
+      // Wait for navigation away from login (SPA may redirect to dashboard, home, or talent)
+      await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 30000 })
     } finally {
       await page.close()
     }

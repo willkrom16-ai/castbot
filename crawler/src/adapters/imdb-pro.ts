@@ -82,14 +82,29 @@ export class ImdbProAdapter extends BaseAdapter {
 
     try {
       const startUrl = searchUrl ?? this.defaultSearchUrl
+
+      // Capture page console logs for debugging
+      page.on('console', msg => {
+        if (msg.text().startsWith('[imdb-pro]')) {
+          console.log(msg.text())
+        }
+      })
+
       await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(2000)
 
       const pageUrls = await page.evaluate(() => {
         const anchors = Array.from(document.querySelectorAll('a[href]'))
-        return anchors
-          .map(a => (a as HTMLAnchorElement).href)
-          .filter(href => href.includes('pro.imdb.com/project/') || href.includes('pro.imdb.com/title/'))
+        const allHrefs = anchors.map(a => (a as HTMLAnchorElement).href)
+        // Log a sample of hrefs for debugging
+        console.log('[imdb-pro] Sample hrefs:', JSON.stringify(allHrefs.slice(0, 20)))
+        return allHrefs.filter(href =>
+          href.includes('pro.imdb.com/project') ||
+          href.includes('pro.imdb.com/title') ||
+          href.includes('pro.imdb.com/name') ||
+          // IMDB Pro uses tt/nm/co IDs in paths
+          (href.includes('imdb.com') && /\/(tt|nm|co)\d{7,}/.test(href))
+        )
       })
 
       urls.push(...pageUrls)

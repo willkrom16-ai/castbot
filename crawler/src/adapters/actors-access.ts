@@ -64,21 +64,41 @@ export class ActorsAccessAdapter extends BaseAdapter {
     try {
       const startUrl = searchUrl ?? this.defaultSearchUrl
       await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(2000)
+
+      // Log current URL and page title for debugging
+      const currentUrl = page.url()
+      const pageTitle = await page.title()
+      console.log(`[actors_access] getListingUrls: landed on "${pageTitle}" at ${currentUrl}`)
+
+      // Capture page console logs for debugging
+      page.on('console', msg => {
+        if (msg.text().startsWith('[actors_access]')) console.log(msg.text())
+      })
 
       for (let p = 0; p < 5; p++) {
         await page.waitForTimeout(1500)
 
-        const pageUrls = await page.evaluate(() => {
-          const anchors = Array.from(document.querySelectorAll('a[href]'))
-          return anchors
-            .map(a => (a as HTMLAnchorElement).href)
-            .filter(href =>
-              href.includes('/projects/') &&
-              href !== 'https://actorsaccess.com/projects/' &&
-              /\/projects\/\w/.test(href)
-            )
-        })
+        const pageUrls = await page.evaluate(`
+          (function() {
+            var anchors = Array.from(document.querySelectorAll('a[href]'));
+            var allHrefs = anchors.map(function(a) { return a.href; });
+            console.log('[actors_access] Total anchors: ' + allHrefs.length + ' Sample: ' + JSON.stringify(allHrefs.slice(0, 15)));
+            return allHrefs.filter(function(href) {
+              return href.includes('actorsaccess.com') &&
+                href !== 'https://actorsaccess.com/projects/' &&
+                href !== 'https://actorsaccess.com/' &&
+                (
+                  href.includes('/projects') ||
+                  href.includes('/role') ||
+                  href.includes('projID=') ||
+                  href.includes('roleID=')
+                );
+            });
+          })()
+        `) as string[]
 
+        console.log(`[actors_access] Page ${p + 1}: found ${pageUrls.length} listing URLs`)
         urls.push(...pageUrls)
 
         // Next page
