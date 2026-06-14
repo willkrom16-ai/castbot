@@ -14,36 +14,34 @@ export class CastingNetworksAdapter extends BaseAdapter {
 
     try {
       await page.goto('https://app.castingnetworks.com/login', { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(3000)
 
-      // Wait for SPA to hydrate — try for up to 20s for an input to appear
-      await page.waitForSelector('input', { state: 'attached', timeout: 20000 })
-      await page.waitForTimeout(2000)
+      console.log('[casting_networks] Login page URL:', page.url())
 
-      // Log what inputs are present for debugging
-      const inputCount = await page.evaluate(`document.querySelectorAll('input').length`)
-      console.log('[casting_networks] Inputs found on login page:', inputCount)
-      console.log('[casting_networks] Current URL:', page.url())
+      // Dismiss cookie consent banner if present
+      const cookieBtn = page.locator('button:has-text("Accept"), button:has-text("OK"), button:has-text("Got it"), [id*="cookie"] button').first()
+      if (await cookieBtn.count() > 0) {
+        await cookieBtn.click().catch(() => {})
+        await page.waitForTimeout(1000)
+      }
 
-      // Fill credentials via JS evaluate (handles React synthetic events)
-      await page.evaluate(`
-        (function() {
-          function setVal(sel, val) {
-            var el = document.querySelector(sel);
-            if (!el) { console.log('[casting_networks] Selector not found: ' + sel); return false; }
-            el.focus();
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-            return true;
-          }
-          var emailOk = setVal('input[type="email"], input[name="email"], input[name="username"]', ${JSON.stringify(username)});
-          var passOk = setVal('input[type="password"]', ${JSON.stringify(password)});
-          console.log('[casting_networks] email filled:', emailOk, 'pass filled:', passOk);
-          var btn = document.querySelector('button[type="submit"], input[type="submit"]');
-          if (btn) { btn.click(); console.log('[casting_networks] Submit clicked'); }
-          else { console.log('[casting_networks] No submit button found'); }
-        })()
-      `)
+      // Log page state
+      const bodyText = await page.evaluate(`document.body ? document.body.innerText.slice(0, 300) : 'no body'`)
+      console.log('[casting_networks] Page body preview:', bodyText)
+
+      // Use Playwright native fill — works with React/Angular synthetic events
+      await page.locator('input[type="email"], input[name="email"], input[name="username"]').first().fill(username, { timeout: 15000 })
+      await page.waitForTimeout(300)
+      await page.locator('input[type="password"]').first().fill(password, { timeout: 10000 })
+      await page.waitForTimeout(300)
+
+      // Submit
+      const submitBtn = page.locator('button[type="submit"], input[type="submit"]').first()
+      if (await submitBtn.count() > 0) {
+        await submitBtn.click()
+      } else {
+        await page.keyboard.press('Enter')
+      }
 
       // Wait for navigation away from login — any redirect destination is fine
       await page.waitForFunction(() => !window.location.href.includes('/login'), { timeout: 40000 })

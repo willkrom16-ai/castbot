@@ -16,41 +16,24 @@ export class ImdbProAdapter extends BaseAdapter {
 
     try {
       await page.goto('https://www.imdb.com/ap/signin?openid.return_to=https://pro.imdb.com/', { waitUntil: 'domcontentloaded', timeout: 30000 })
-      await page.waitForTimeout(2000)
 
-      // Step 1: fill email and click continue (Amazon may be two-step)
-      await page.evaluate(`
-        (function() {
-          function setVal(sel, val) {
-            var el = document.querySelector(sel);
-            if (!el) return;
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-          setVal('input[name="email"], #ap_email', ${JSON.stringify(username)});
-          var cont = document.querySelector('input[id="continue"], #continue');
-          if (cont) cont.click();
-        })()
-      `)
+      // Step 1: fill email field and click Continue
+      await page.waitForSelector('#ap_email, input[name="email"]', { timeout: 15000 })
+      await page.locator('#ap_email, input[name="email"]').first().fill(username)
+      await page.waitForTimeout(500)
 
-      await page.waitForTimeout(2000)
+      // Click Continue (Amazon may be one-step or two-step)
+      const continueBtn = page.locator('#continue, input[id="continue"]').first()
+      if (await continueBtn.count() > 0) {
+        await continueBtn.click()
+        await page.waitForTimeout(2000)
+      }
 
       // Step 2: fill password and submit
-      await page.evaluate(`
-        (function() {
-          function setVal(sel, val) {
-            var el = document.querySelector(sel);
-            if (!el) return;
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-          setVal('input[name="password"], #ap_password', ${JSON.stringify(password)});
-          var btn = document.querySelector('input[id="signInSubmit"], input[type="submit"]');
-          if (btn) btn.click();
-        })()
-      `)
+      await page.waitForSelector('#ap_password, input[name="password"]', { timeout: 10000 })
+      await page.locator('#ap_password, input[name="password"]').first().fill(password)
+      await page.waitForTimeout(500)
+      await page.locator('#signInSubmit, input[type="submit"]').first().click()
 
       // Must match the actual hostname, not just the string — the current signin URL
       // contains openid.return_to=https://pro.imdb.com/ which would falsely match a naive regex

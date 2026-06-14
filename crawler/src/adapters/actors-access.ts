@@ -95,8 +95,10 @@ export class ActorsAccessAdapter extends BaseAdapter {
 
         const allHtml = rawHtml + frameHtmls.join('')
 
-        // Extract all breakdown=NNNNNN URLs from raw HTML
-        const re = /[?&]breakdown=(\d+)/g
+        // Extract all breakdown=NNNNNN URLs from raw HTML.
+        // HTML attributes encode & as &amp; so we can't rely on the preceding char —
+        // just search for the bare "breakdown=DIGITS" pattern anywhere in the HTML.
+        const re = /breakdown=(\d+)/g
         const breakdownIds = new Set<string>()
         let m: RegExpExecArray | null
         while ((m = re.exec(allHtml)) !== null) {
