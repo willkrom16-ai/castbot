@@ -12,6 +12,7 @@ export const config = {
   supabaseServiceKey: require_env('SUPABASE_SERVICE_KEY'),
   crawlerSecret: require_env('CRAWLER_SECRET'),
   appUrl: require_env('APP_URL'),
+  anthropicKey: require_env('ANTHROPIC_API_KEY'),
   sessionDir: process.env.SESSION_DIR ?? path.join(process.cwd(), 'sessions'),
   crawlIntervalHours: parseInt(process.env.CRAWL_INTERVAL_HOURS ?? '4', 10),
   credentials: {
