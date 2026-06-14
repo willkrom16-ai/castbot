@@ -77,22 +77,39 @@ export class ActorsAccessAdapter extends BaseAdapter {
       })
 
       for (let p = 0; p < 5; p++) {
-        await page.waitForTimeout(1500)
+        await page.waitForTimeout(3000)
 
-        const pageUrls = await page.evaluate(`
-          (function() {
-            var anchors = Array.from(document.querySelectorAll('a[href]'));
-            var allHrefs = anchors.map(function(a) { return a.href; });
-            console.log('[actors_access] Total anchors: ' + allHrefs.length + ' Sample: ' + JSON.stringify(allHrefs.slice(0, 15)));
-            return allHrefs.filter(function(href) {
-              // Only individual breakdown listings (breakdown=NNNNNN), not pagination or nav links
-              return href.includes('actorsaccess.com') &&
-                /[?&]breakdown=\d+/.test(href);
-            });
-          })()
-        `) as string[]
+        // Actors Access uses legacy frames — search raw HTML for breakdown URL patterns
+        // instead of relying on <a href> which may be javascript:void(0)
+        const rawHtml = await page.content()
 
-        console.log(`[actors_access] Page ${p + 1}: found ${pageUrls.length} listing URLs`)
+        // Also get HTML from any iframes on the page
+        const frameHtmls: string[] = []
+        for (const frame of page.frames()) {
+          if (frame === page.mainFrame()) continue
+          try {
+            const fhtml = await frame.content()
+            frameHtmls.push(fhtml)
+          } catch { /* cross-origin frame, skip */ }
+        }
+
+        const allHtml = rawHtml + frameHtmls.join('')
+
+        // Extract all breakdown=NNNNNN URLs from raw HTML
+        const re = /[?&]breakdown=(\d+)/g
+        const breakdownIds = new Set<string>()
+        let m: RegExpExecArray | null
+        while ((m = re.exec(allHtml)) !== null) {
+          breakdownIds.add(m[1])
+        }
+
+        console.log(`[actors_access] Page ${p + 1}: found ${breakdownIds.size} breakdown IDs in HTML (${frameHtmls.length} extra frames)`)
+
+        // Reconstruct canonical URLs for each breakdown ID
+        const pageUrls = Array.from(breakdownIds).map(id =>
+          `https://actorsaccess.com/projects/?view=breakdowns&breakdown=${id}&region=5`
+        )
+
         urls.push(...pageUrls)
 
         // Next page

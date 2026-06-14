@@ -52,10 +52,11 @@ export class ImdbProAdapter extends BaseAdapter {
         })()
       `)
 
-      await page.waitForURL(/pro\.imdb\.com/, { timeout: 25000 })
+      // Must match the actual hostname, not just the string — the current signin URL
+      // contains openid.return_to=https://pro.imdb.com/ which would falsely match a naive regex
+      await page.waitForURL(url => new URL(url).hostname === 'pro.imdb.com', { timeout: 25000 })
       // Amazon auth sets session cookies asynchronously via JS — wait for them to settle
       await page.waitForTimeout(5000)
-      // Verify we're actually authenticated (not on signup/marketing page)
       const landedUrl = page.url()
       console.log(`[imdb_pro] Post-login URL: ${landedUrl}`)
     } finally {
