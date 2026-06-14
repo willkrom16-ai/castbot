@@ -23,8 +23,18 @@ Return ONLY a raw JSON object with exactly this structure (no markdown, no wrapp
 
 If no flags, return empty arrays and safe_to_process: true.`
 
+const TRUSTED_CRAWLER_SOURCES = ['backstage', 'actors_access', 'casting_networks', 'imdb_pro']
+
 export function buildComplianceUserPrompt(input: unknown): string {
-  return `Screen this casting opportunity for compliance issues:
+  const inp = input as { raw_text?: string; parsed_opportunity?: unknown; actor_conflict_brands?: string[]; actor_union_status?: string | null; source?: string }
+
+  const isTrustedPlatform = inp.source && TRUSTED_CRAWLER_SOURCES.some(s => inp.source!.includes(s))
+
+  const sourceNote = isTrustedPlatform
+    ? `\n\nIMPORTANT: This listing was scraped from a vetted casting platform (${inp.source}). Do NOT flag as POTENTIAL_SCAM or LOW_QUALITY_PROJECT based on formatting or missing info — these platforms are pre-screened. Only flag UNION_CONFLICT or COMMERCIAL_CONFLICT if there is a clear, specific conflict with the actor's profile.`
+    : ''
+
+  return `Screen this casting opportunity for compliance issues:${sourceNote}
 
 <opportunity>
 ${JSON.stringify(input, null, 2)}

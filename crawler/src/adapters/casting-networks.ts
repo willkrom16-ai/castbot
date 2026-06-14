@@ -83,15 +83,33 @@ export class CastingNetworksAdapter extends BaseAdapter {
   }
 
   async extractListing(page: Page, url: string): Promise<ListingResult> {
-    await page.waitForTimeout(1500) // SPA content load
+    await page.waitForTimeout(2000) // SPA render
 
     const text = await page.evaluate(() => {
-      const remove = document.querySelectorAll('nav, footer, header, script, style, [class*="sidebar"]')
-      remove.forEach(el => el.remove())
-      return document.body.innerText
+      const selectors = [
+        '[class*="audition-detail"]',
+        '[class*="job-detail"]',
+        '[class*="role-detail"]',
+        '[class*="listing-detail"]',
+        'main',
+        '[role="main"]',
+        '.content',
+        '#content',
+      ]
+
+      for (const sel of selectors) {
+        const el = document.querySelector(sel)
+        if (el && el.textContent && el.textContent.trim().length > 200) {
+          return el.textContent.trim()
+        }
+      }
+
+      const noise = document.querySelectorAll('nav, footer, header, [class*="sidebar"], [class*="nav"], script, style')
+      noise.forEach(el => el.remove())
+      return document.body.innerText.trim()
     })
 
     const title = await page.title()
-    return { url, title, rawText: text.trim() }
+    return { url, title, rawText: text }
   }
 }

@@ -80,6 +80,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
     parsed_opportunity: {},
     actor_conflict_brands: input.actor_profile.conflict_brands ?? [],
     actor_union_status: input.actor_profile.union_status?.join(", ") ?? null,
+    source: input.source,
   })
   logs.push(complianceLog)
 

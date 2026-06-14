@@ -87,14 +87,33 @@ export class BackstageAdapter extends BaseAdapter {
 
   async extractListing(page: Page, url: string): Promise<ListingResult> {
     const text = await page.evaluate(() => {
-      // Remove nav, footer, ads
-      const remove = document.querySelectorAll('nav, footer, header, [class*="ad"], [id*="ad"], script, style')
-      remove.forEach(el => el.remove())
-      return document.body.innerText
+      // Try to find the main content area first
+      const selectors = [
+        'article',
+        'main',
+        '[class*="casting-listing"]',
+        '[class*="breakdown"]',
+        '[class*="role-detail"]',
+        '[class*="job-detail"]',
+        '[data-testid*="listing"]',
+        '.content',
+        '#content',
+      ]
+
+      for (const sel of selectors) {
+        const el = document.querySelector(sel)
+        if (el && el.textContent && el.textContent.trim().length > 200) {
+          return el.textContent.trim()
+        }
+      }
+
+      // Fallback: strip noise and use body
+      const noise = document.querySelectorAll('nav, footer, header, [class*="nav"], [class*="menu"], [class*="sidebar"], [class*="ad"], [id*="ad"], script, style, [aria-label="navigation"]')
+      noise.forEach(el => el.remove())
+      return document.body.innerText.trim()
     })
 
     const title = await page.title()
-
-    return { url, title, rawText: text.trim() }
+    return { url, title, rawText: text }
   }
 }

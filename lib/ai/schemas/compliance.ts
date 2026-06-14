@@ -5,6 +5,7 @@ export const complianceInputSchema = z.object({
   parsed_opportunity: z.record(z.string(), z.unknown()),
   actor_conflict_brands: z.array(z.string()),
   actor_union_status: z.string().nullable(),
+  source: z.string().optional(),
 })
 
 export const complianceOutputSchema = z.object({
