@@ -16,6 +16,9 @@ export type RecommendationCardData = {
   role_description: string | null
   shoot_location: string | null
   audition_deadline: string | null
+  audition_dates: string | null
+  callback_dates: string | null
+  project_dates: string | null
   casting_director: string | null
   submission_url: string | null
   recommended_action: string
@@ -76,14 +79,48 @@ export function RecommendationCard({ data }: { data: RecommendationCardData }) {
             )}
           </h3>
           <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-            {data.shoot_location && <span>{data.shoot_location}</span>}
             {data.casting_director && <span>CD: {data.casting_director}</span>}
-            {deadline && <span className="font-medium text-foreground">Due {deadline}</span>}
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4 pt-0">
+        {/* Key listing details grid */}
+        {(data.shoot_location || deadline || data.audition_dates || data.callback_dates || data.project_dates) && (
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+            {data.shoot_location && (
+              <>
+                <dt className="text-muted-foreground">Location</dt>
+                <dd className="font-medium">{data.shoot_location}</dd>
+              </>
+            )}
+            {deadline && (
+              <>
+                <dt className="text-muted-foreground">Submit by</dt>
+                <dd className="font-medium text-amber-700">{deadline}</dd>
+              </>
+            )}
+            {data.audition_dates && (
+              <>
+                <dt className="text-muted-foreground">Auditions</dt>
+                <dd className="font-medium">{data.audition_dates}</dd>
+              </>
+            )}
+            {data.callback_dates && (
+              <>
+                <dt className="text-muted-foreground">Callbacks</dt>
+                <dd className="font-medium">{data.callback_dates}</dd>
+              </>
+            )}
+            {data.project_dates && (
+              <>
+                <dt className="text-muted-foreground">Project dates</dt>
+                <dd className="font-medium">{data.project_dates}</dd>
+              </>
+            )}
+          </dl>
+        )}
+
         {/* AI reasoning */}
         {data.reasoning_summary && (
           <p className="text-sm text-muted-foreground leading-relaxed">{data.reasoning_summary}</p>

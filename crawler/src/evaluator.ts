@@ -38,6 +38,9 @@ export interface EvaluationResult {
   union_requirement: string | null
   shoot_location: string | null
   audition_deadline: string | null
+  audition_dates: string | null
+  callback_dates: string | null
+  project_dates: string | null
   rate_disclosed: boolean
   casting_director: string | null
   production_company: string | null
@@ -63,7 +66,7 @@ export async function evaluateListing(
 
   const prompt = `You are a casting analyst AI. Given a casting listing and an actor's profile, do the following in one pass:
 
-1. Parse the listing: extract project title, type (film/tv/commercial/theatre/other), role name, role description, union requirement, shoot location, audition deadline, whether pay rate is disclosed, casting director, production company, and submission URL if present.
+1. Parse the listing: extract project title, type (film/tv/commercial/theatre/other), role name, role description, union requirement, shoot location, submission deadline (audition_deadline as ISO date string YYYY-MM-DD), audition dates (the actual in-person or self-tape audition window — as a human-readable string e.g. "June 20–22"), callback dates (if mentioned — as a human-readable string), project/shoot dates (the production shoot window — as a human-readable string e.g. "July 5 – August 2"), whether pay rate is disclosed, casting director, production company, and submission URL if present. Set any unparseable date fields to null.
 
 2. Check compliance: is this a legitimate casting opportunity? Flag POTENTIAL_SCAM if it asks for payment, personal financial info, or seems fraudulent.${isTrustedSource ? ` NOTE: This listing is from a trusted casting platform (${source}) — do NOT flag as scam unless there are extremely obvious red flags.` : ''}
 
@@ -136,6 +139,9 @@ Respond with ONLY a valid JSON object matching this schema (no markdown, no expl
   "union_requirement": string | null,
   "shoot_location": string | null,
   "audition_deadline": string | null,
+  "audition_dates": string | null,
+  "callback_dates": string | null,
+  "project_dates": string | null,
   "rate_disclosed": boolean,
   "casting_director": string | null,
   "production_company": string | null,

@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
       union_requirement: string | null
       shoot_location: string | null
       audition_deadline: string | null
+      audition_dates: string | null
+      callback_dates: string | null
+      project_dates: string | null
       rate_disclosed: boolean
       casting_director: string | null
       production_company: string | null
@@ -82,6 +85,9 @@ export async function POST(req: NextRequest) {
     union_requirement: ev.union_requirement,
     shoot_location: ev.shoot_location,
     audition_deadline: ev.audition_deadline ?? null,
+    audition_dates: ev.audition_dates ?? null,
+    callback_dates: ev.callback_dates ?? null,
+    project_dates: ev.project_dates ?? null,
     rate_disclosed: ev.rate_disclosed ? 1 : 0,
     casting_director: ev.casting_director,
     production_company: ev.production_company,

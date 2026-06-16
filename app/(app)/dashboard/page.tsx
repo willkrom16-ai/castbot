@@ -34,7 +34,8 @@ export default async function DashboardPage() {
         id,
         opportunity_details (
           project_title, project_type, role_name, role_description,
-          shoot_location, audition_deadline, casting_director, submission_url
+          shoot_location, audition_deadline, audition_dates, callback_dates,
+          project_dates, casting_director, submission_url
         ),
         recommendations (
           id, recommended_action, fit_score, confidence_score,
@@ -111,6 +112,9 @@ export default async function DashboardPage() {
         role_description: (details?.role_description as string) ?? null,
         shoot_location: (details?.shoot_location as string) ?? null,
         audition_deadline: (details?.audition_deadline as string) ?? null,
+        audition_dates: (details?.audition_dates as string) ?? null,
+        callback_dates: (details?.callback_dates as string) ?? null,
+        project_dates: (details?.project_dates as string) ?? null,
         casting_director: (details?.casting_director as string) ?? null,
         submission_url: (details?.submission_url as string) ?? null,
         recommended_action: (rec.recommended_action as string) ?? "REVIEW",
