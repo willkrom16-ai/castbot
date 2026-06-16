@@ -26,6 +26,7 @@ export async function ingestListing(payload: IngestPayload): Promise<{ opportuni
 
   // Step 2: run AI evaluation in Railway (no Vercel timeout constraints)
   const source = `crawler:${payload.site}`
+  console.log(`  [evaluator] Profile: name=${(profile as Record<string,unknown>).stage_name ?? 'null'} union=${JSON.stringify((profile as Record<string,unknown>).union_status)} age=${(profile as Record<string,unknown>).age_range_low}-${(profile as Record<string,unknown>).age_range_high} gender=${(profile as Record<string,unknown>).gender_identity}`)
   console.log(`  [evaluator] Running AI evaluation for: ${payload.listing_title}`)
   const evaluation = await evaluateListing(payload.raw_text, profile, source)
   console.log(`  [evaluator] fit_score=${evaluation.fit_score} action=${evaluation.recommended_action}`)
