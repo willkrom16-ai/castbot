@@ -48,7 +48,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export function RecommendationCard({ data }: { data: RecommendationCardData }) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(data.recommended_action === "SUBMIT")
   const startedAt = useState(() => Date.now())[0]
 
   const deadline = data.audition_deadline
