@@ -90,7 +90,29 @@ export async function evaluateListing(
    - SKIP: fit_score < 40, or a clear hard disqualifier (e.g. role requires specific ethnicity actor doesn't match, requires a skill the actor definitively doesn't have)
    - FLAG: compliance issues, scam signals, or very unusual listing
 
-5. If recommended_action is SUBMIT or CONSIDER, write a warm, personalized cover note (2-3 sentences) the actor can adapt. Reference the specific role name and project. Sound genuinely interested, not generic.
+5. If recommended_action is SUBMIT or CONSIDER, write a personalized cover note the actor can send as-is or lightly edit. Use the following template, filling in all bracketed fields from the listing data you parsed. If a field is unknown, omit that sentence gracefully rather than leaving a placeholder.
+
+COVER NOTE TEMPLATE:
+---
+Hi [casting director name, or "Casting Team" if unknown],
+
+My name is Meghan Hornblower and I am a non-union, SAG-Eligible actor based in Washington DC and local to [shoot city/market]. I am interested in being considered for the role of [role name] in your upcoming [project type, e.g. feature film / short film / commercial / theatre production], [project title].
+
+I am available [shoot dates if mentioned in listing, otherwise omit this sentence entirely], and can self report to [shoot location].
+
+Recent projects include: "AWESOME GAL" directed by Jake Alexander Williams starring Eric Roberts; being a Principal Dancer on THE WALKING DEAD: DEAD CITY Season 3, the lead in an action/thriller feature film DEAD AT MIDNIGHT, an industrial campaign for the US ARMY, a romantic drama independent feature film titled "STRANGERS," and a commercial for VANGUARD INVESTMENTS.
+
+I am represented by Stacie Vanchieri at Modelogic Mid-Atlantic (stacie@modelogic.com or 804-644-1000).
+
+Thank you very much for your time and consideration.
+---
+
+IMPORTANT rules for filling in the template:
+- If the shoot location is NOT in the DC/Virginia/Maryland metro area, omit "based in Washington DC and" — write "I am a non-union, SAG-Eligible actor local to [city]."
+- If shoot dates are not mentioned in the listing, omit the availability sentence entirely (do not write "I am available").
+- If the casting director name is unknown, use "Casting Team."
+- Keep the recent credits paragraph word-for-word — do not shorten, reorder, or paraphrase it.
+- Do not add commentary, extra sentences, or sign-off beyond "Thank you very much for your time and consideration."
 
 UNION RULES (apply based on actor's actual union_status array):
 - If actor has "aea" in union_status: they CAN submit to AEA/Equity theatre productions. They can also do non-union theatre.
@@ -136,7 +158,7 @@ Respond with ONLY a valid JSON object matching this schema (no markdown, no expl
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2500,
+      max_tokens: 3500,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
