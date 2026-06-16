@@ -147,15 +147,49 @@ export class ActorsAccessAdapter extends BaseAdapter {
       })
       await page.waitForTimeout(2000)
 
-      // Step 2: try to click the breakdown link to load it in the SPA/iframe context
-      const breakdownLink = page.locator(`a[href*="breakdown=${breakdownId}"]`).first()
-      if (await breakdownLink.count() > 0) {
-        await breakdownLink.click()
-        await page.waitForTimeout(2500)
+      // Step 2: search ALL frames for the breakdown link and click it
+      // (page.locator only searches main frame; breakdown links are inside iframes)
+      let clicked = false
+      for (const frame of page.frames()) {
+        if (clicked) break
+        try {
+          const didClick: boolean = await frame.evaluate(`
+            (function() {
+              var id = '${breakdownId}';
+              // Try href-based selectors first
+              var el = document.querySelector('a[href*="breakdown=' + id + '"]');
+              if (el) { el.click(); return true; }
+              // Try onclick-based elements
+              var all = Array.from(document.querySelectorAll('[onclick]'));
+              for (var i = 0; i < all.length; i++) {
+                if ((all[i].getAttribute('onclick') || '').includes(id)) {
+                  all[i].click(); return true;
+                }
+              }
+              return false;
+            })()
+          `)
+          if (didClick) { clicked = true; console.log('[actors_access] Clicked breakdown in frame') }
+        } catch { /* cross-origin frame, skip */ }
+      }
+
+      if (clicked) {
+        await page.waitForTimeout(3000)
       } else {
-        // Fallback: navigate directly (may work if server-side state is now set)
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
-        await page.waitForTimeout(2000)
+        // Try navigating a child frame directly to the breakdown URL
+        // (iframe navigation sends the parent page as Referer, unlike a new tab)
+        const childFrames = page.frames().filter(f => f !== page.mainFrame())
+        for (const frame of childFrames) {
+          try {
+            await frame.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 })
+            await page.waitForTimeout(1500)
+            const ft: string = await frame.evaluate(`document.body ? document.body.innerText.trim() : ''`)
+            if (ft.length > 200 && !ft.toLowerCase().includes('log in')) {
+              console.log('[actors_access] Got content via frame.goto')
+              return { url, title: await page.title(), rawText: ft }
+            }
+          } catch { /* frame nav failed, try next */ }
+        }
       }
 
       const title = await page.title()

@@ -92,7 +92,12 @@ export async function evaluateListing(
 
 5. If recommended_action is SUBMIT or CONSIDER, write a warm, personalized cover note (2-3 sentences) the actor can adapt. Reference the specific role name and project. Sound genuinely interested, not generic.
 
-UNION RULE: Non-union actors can submit to non-union film, TV, and commercial roles. Non-union actors CANNOT submit to union theatre (Equity/AEA) productions. SAG-AFTRA actors cannot submit to non-union principal roles. When union status of the role is unspecified, assume the actor can submit.
+UNION RULES (apply based on actor's actual union_status array):
+- If actor has "aea" in union_status: they CAN submit to AEA/Equity theatre productions. They can also do non-union theatre.
+- If actor has "sag-aftra" in union_status: they CAN submit to SAG-AFTRA film/TV/commercial. They CANNOT do non-union principal film/TV roles.
+- If actor has "non-union" but NOT "sag-aftra": they can submit to non-union film, TV, commercial, and web content. They CANNOT submit to SAG-AFTRA principal roles.
+- If actor has BOTH "non-union" and "aea" (like this actor): they are Equity for theatre but non-union for film/TV/commercial. They can submit to: AEA theatre, non-union theatre, non-union film/TV/commercial.
+- When union requirement of the role is unspecified, assume the actor can submit.
 
 ACTOR PROFILE:
 ${JSON.stringify(actorProfile, null, 2)}
