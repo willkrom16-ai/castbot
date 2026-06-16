@@ -18,6 +18,7 @@ type ReviewRow = {
   submission_url: string | null
   role_name: string | null
   project_title: string | null
+  audition_deadline: string | null
   recommended_action: string | null
   fit_score: number | null
   decision: string | null
@@ -87,7 +88,7 @@ export default async function ReviewPage() {
     .select(`
       id, processing_status, scan_title, scan_project, scan_skip_reason,
       source_subject, ingested_at,
-      opportunity_details ( role_name, project_title, submission_url ),
+      opportunity_details ( role_name, project_title, submission_url, audition_deadline ),
       recommendations ( id, recommended_action, fit_score )
     `)
     .eq("actor_id", user!.id)
@@ -137,15 +138,24 @@ export default async function ReviewPage() {
       submission_url: (details?.submission_url as string) ?? null,
       role_name: (details?.role_name as string) ?? null,
       project_title: (details?.project_title as string) ?? null,
+      audition_deadline: (details?.audition_deadline as string) ?? null,
       recommended_action: rec?.recommended_action ?? null,
       fit_score: rec?.fit_score ?? null,
       decision,
     }
   })
 
-  const groups = groupByDigest(mapped)
-  const totalRoles = mapped.length
-  const surfaced = mapped.filter((r) => r.processing_status === "analyzed").length
+  // Filter out listings whose audition deadline has already passed
+  const now = new Date()
+  const active = mapped.filter((r) => {
+    if (!r.audition_deadline) return true
+    const d = new Date(r.audition_deadline)
+    return isNaN(d.getTime()) || d >= now
+  })
+
+  const groups = groupByDigest(active)
+  const totalRoles = active.length
+  const surfaced = active.filter((r) => r.processing_status === "analyzed").length
 
   return (
     <div className="space-y-6">

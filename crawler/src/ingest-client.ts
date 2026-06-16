@@ -29,7 +29,16 @@ export async function ingestListing(payload: IngestPayload): Promise<{ opportuni
   console.log(`  [evaluator] Profile: name=${(profile as Record<string,unknown>).stage_name ?? 'null'} union=${JSON.stringify((profile as Record<string,unknown>).union_status)} age=${(profile as Record<string,unknown>).age_range_low}-${(profile as Record<string,unknown>).age_range_high} gender=${(profile as Record<string,unknown>).gender_identity}`)
   console.log(`  [evaluator] Running AI evaluation for: ${payload.listing_title}`)
   const evaluation = await evaluateListing(payload.raw_text, profile, source)
-  console.log(`  [evaluator] fit_score=${evaluation.fit_score} action=${evaluation.recommended_action}`)
+  console.log(`  [evaluator] fit_score=${evaluation.fit_score} action=${evaluation.recommended_action} deadline=${evaluation.audition_deadline ?? 'none'}`)
+
+  // Step 2b: skip expired listings — no point surfacing roles whose deadline has passed
+  if (evaluation.audition_deadline) {
+    const deadline = new Date(evaluation.audition_deadline)
+    if (!isNaN(deadline.getTime()) && deadline < new Date()) {
+      console.log(`  [evaluator] SKIPPING expired listing (deadline ${evaluation.audition_deadline}): ${payload.listing_title}`)
+      return {}
+    }
+  }
 
   // Step 3: POST finished results to Vercel save endpoint (pure DB write, < 1s)
   const res = await fetch(`${config.appUrl}/api/crawl/save`, {

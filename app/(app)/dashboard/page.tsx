@@ -86,9 +86,18 @@ export default async function DashboardPage() {
 
   const pending: RecommendationCardData[] = []
 
+  const now = new Date()
+
   for (const row of ((rows ?? []) as Row[])) {
     const details = row.opportunity_details as Record<string, unknown> | null
     const recs = (row.recommendations ?? []) as Record<string, unknown>[]
+
+    // Skip listings whose audition deadline has already passed
+    const deadlineStr = details?.audition_deadline as string | null | undefined
+    if (deadlineStr) {
+      const deadline = new Date(deadlineStr)
+      if (!isNaN(deadline.getTime()) && deadline < now) continue
+    }
 
     for (const rec of recs) {
       const recId = rec.id as string
