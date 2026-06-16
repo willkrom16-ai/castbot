@@ -120,7 +120,7 @@ Respond with ONLY a valid JSON object matching this schema (no markdown, no expl
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
+      max_tokens: 2500,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -136,9 +136,12 @@ Respond with ONLY a valid JSON object matching this schema (no markdown, no expl
 
   const text = data.content.find(b => b.type === 'text')?.text ?? ''
 
+  // Strip markdown code fences if Claude wraps response despite instructions
+  const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+
   try {
-    return JSON.parse(text) as EvaluationResult
+    return JSON.parse(clean) as EvaluationResult
   } catch {
-    throw new Error(`Failed to parse Claude response as JSON: ${text.slice(0, 200)}`)
+    throw new Error(`Failed to parse Claude response as JSON: ${clean.slice(0, 200)}`)
   }
 }
