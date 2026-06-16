@@ -75,8 +75,10 @@ export async function POST(req: NextRequest) {
 
   const opportunityId = (opp as { id: string }).id
 
-  // Insert parsed details
-  await supabase.from("opportunity_details").insert({
+  // Insert parsed details — cast to any because Supabase generated types predate
+  // the audition_dates / callback_dates / project_dates columns
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.from("opportunity_details") as any).insert({
     opportunity_id: opportunityId,
     project_title: ev.project_title,
     project_type: ev.project_type,
