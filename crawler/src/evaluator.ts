@@ -67,21 +67,32 @@ export async function evaluateListing(
 
 2. Check compliance: is this a legitimate casting opportunity? Flag POTENTIAL_SCAM if it asks for payment, personal financial info, or seems fraudulent.${isTrustedSource ? ` NOTE: This listing is from a trusted casting platform (${source}) — do NOT flag as scam unless there are extremely obvious red flags.` : ''}
 
-3. Evaluate fit against the actor profile. Give a fit_score 0-100 where:
-   - 80-100: Strong match, actor clearly qualified
-   - 60-79: Good match, worth submitting
-   - 40-59: Marginal, missing some requirements
-   - 0-39: Poor fit or disqualifying factors
+3. Evaluate fit against the actor profile. Be GENEROUS — real casting is about potential and range, not just exact matches. Give a fit_score 0-100 where:
+   - 85-100: Excellent match — actor hits nearly all stated requirements
+   - 70-84: Strong match — actor fits the core requirements, minor gaps are fine
+   - 55-69: Good match — actor is in the right ballpark, worth a shot
+   - 40-54: Possible — one or two things don't align but not disqualifying
+   - 20-39: Weak fit — meaningful mismatches on key requirements
+   - 0-19: Clear mismatch — wrong gender, wrong age range by 15+ years, wrong union tier for the role type, etc.
+
+   SCORING GUIDANCE — be generous, not strict:
+   - If the listing doesn't specify ethnicity, assume the actor qualifies
+   - If age range isn't stated, assume the actor qualifies unless it's clearly a child/senior role
+   - If the role description is vague, give the benefit of the doubt
+   - Skills not listed in the actor's profile but not required by the role don't hurt the score
+   - Physical attributes (height, weight) only matter if explicitly required
+   - Location flexibility: if the actor is willing to travel/relocate, don't penalize for out-of-area shoots
+   - A real working actor would submit to most roles they broadly fit — err on the side of recommending submission
 
 4. Determine recommended_action:
-   - SUBMIT: fit_score >= 70 and legitimate and no hard disqualifiers
-   - CONSIDER: fit_score 50-69, legitimate, worth reviewing
-   - SKIP: fit_score < 50, or actor clearly doesn't meet requirements
+   - SUBMIT: fit_score >= 60 and legitimate and no hard disqualifiers
+   - CONSIDER: fit_score 40-59, legitimate, actor should review and decide
+   - SKIP: fit_score < 40, or a clear hard disqualifier (e.g. role requires specific ethnicity actor doesn't match, requires a skill the actor definitively doesn't have)
    - FLAG: compliance issues, scam signals, or very unusual listing
 
-5. If recommended_action is SUBMIT or CONSIDER, write a brief, personalized cover note (2-3 sentences) that the actor can use as a starting point. Reference the specific role and show genuine interest. Do NOT write it if action is SKIP or FLAG.
+5. If recommended_action is SUBMIT or CONSIDER, write a warm, personalized cover note (2-3 sentences) the actor can adapt. Reference the specific role name and project. Sound genuinely interested, not generic.
 
-UNION RULE: Non-union actors can submit to non-union film, TV, and commercial roles. Non-union actors CANNOT submit to union theatre (Equity/AEA) productions. SAG-AFTRA actors cannot submit to non-union principal roles.
+UNION RULE: Non-union actors can submit to non-union film, TV, and commercial roles. Non-union actors CANNOT submit to union theatre (Equity/AEA) productions. SAG-AFTRA actors cannot submit to non-union principal roles. When union status of the role is unspecified, assume the actor can submit.
 
 ACTOR PROFILE:
 ${JSON.stringify(actorProfile, null, 2)}
